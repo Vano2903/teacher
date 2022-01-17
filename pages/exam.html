@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>exam</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body onload="">
+    <center>
+        <h1>{{.ExamName}}</h1>
+        <h3 style="font-style: italic;">--- {{.Name}} {{.LastName}} ---</h3>
+        <br>
+        <h2 id="timer"></h2>
+    </center>
+
+
+    <div id="questions-container">
+
+    </div>
+
+    <br>
+    <center>
+        <button onclick="finishTest()" class="btn btn-primary">Submit test</button>
+    </center>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+    <script>
+        var questions;
+
+        Date.prototype.addHours = function (h) {
+            this.setTime(this.getTime() + (h * 60 * 60 * 1000));
+            return this;
+        }
+
+        var countDownDate = new Date().addHours(1).getTime();
+
+        var x = setInterval(function () {
+            var now = new Date().getTime();
+            var distance = countDownDate - now;
+            var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            document.getElementById("timer").innerHTML = hours + "h "
+                + minutes + "m " + seconds + "s ";
+            if (distance < 2000) {
+                alert("ciao");
+                clearInterval(x);
+                document.getElementById("timer").innerHTML = "EXPIRED";
+                finishTest();
+            }
+        }, 1000);
+
+        async function init() {
+            // const r = await fetch('/student/access', {
+            //     method: 'GET',
+            //     headers: {
+            //         'Content-Type': 'application/json'
+            //     }
+            // });
+            // const data = await r.json();
+            // if (data.error) {
+            //     alert(data.msg);
+            //     return;
+            // }
+            // questions = data.questions;
+            questions = JSON.parse(`[
+                    {
+                        "question": "The Harvard architecture for micro-controllers added which additional bus?",
+                        "correct_answer": "Instruction",
+                        "incorrect_answers": [
+                            "Address",
+                            "Data",
+                            "Control"
+                        ]
+                    },
+                    {
+                        "question": "How many Hz does the video standard PAL support?",
+                        "correct_answer": "50",
+                        "incorrect_answers": [
+                            "59",
+                            "60",
+                            "25"
+                        ]
+                    },
+                    {
+                        "question": "What port does HTTP run on?",
+                        "correct_answer": "80",
+                        "incorrect_answers": [
+                            "53",
+                            "443",
+                            "23"
+                        ]
+                    },
+                    {
+                        "question": "What does the International System of Quantities refer 1024 bytes as?",
+                        "correct_answer": "Kibibyte",
+                        "incorrect_answers": [
+                            "Kylobyte",
+                            "Kilobyte",
+                            "Kelobyte"
+                        ]
+                    },
+                    {
+                        "question": "Which RAID array type is associated with data mirroring?",
+                        "correct_answer": "RAID 1",
+                        "incorrect_answers": [
+                            "RAID 0",
+                            "RAID 10",
+                            "RAID 5"
+                        ]
+                    },
+                    {
+                        "question": "Dutch computer scientist Mark Overmars is known for creating which game development engine?",
+                        "correct_answer": "Game Maker",
+                        "incorrect_answers": [
+                            "Stencyl",
+                            "Construct",
+                            "Torque 2D"
+                        ]
+                    },
+                    {
+                        "question": "What vulnerability ranked #1 on the OWASP Top 10 in 2013?",
+                        "correct_answer": "Injection ",
+                        "incorrect_answers": [
+                            "Broken Authentication",
+                            "Cross-Site Scripting",
+                            "Insecure Direct Object References"
+                        ]
+                    },
+                    {
+                        "question": "What major programming language does Unreal Engine 4 use?",
+                        "correct_answer": "C++",
+                        "incorrect_answers": [
+                            "Assembly",
+                            "C#",
+                            "ECMAScript"
+                        ]
+                    },
+                    {
+                        "question": "The acronym &quot;RIP&quot; stands for which of these?",
+                        "correct_answer": "Routing Information Protocol",
+                        "incorrect_answers": [
+                            "Runtime Instance Processes",
+                            "Regular Interval Processes",
+                            "Routine Inspection Protocol"
+                        ]
+                    },
+                    {
+                        "question": "Which kind of algorithm is Ron Rivest not famous for creating?",
+                        "correct_answer": "Secret sharing scheme",
+                        "incorrect_answers": [
+                            "Hashing algorithm",
+                            "Asymmetric encryption",
+                            "Stream cipher"
+                        ]
+                    }
+                ]`);
+
+            console.log(questions);
+
+            for (var i = 0; i < questions.length; i++) {
+                var question = questions[i];
+                console.log(question)
+                var questionDiv = document.createElement("div");
+                questionDiv.className = "card";
+                questionDiv.innerHTML = `
+                <div class="card-header">
+                    <h5 class="card-title">${question.question}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="q${i}1" value="${question.correct_answer}">
+                        <label class="form-check-label" for="q${i}1">
+                            ${question.correct_answer}
+                        </label>
+                    </div>`
+                for (var j = 0; j < question.incorrect_answers.length; j++) {
+                    questionDiv.innerHTML += `
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="q${i}${j + 1}" value="${question.incorrect_answers[i]}">
+                        <label class="form-check-label" for="q${i}${j + 1}">
+                            ${question.incorrect_answers[i]}
+                        </label>
+                    </div>`;
+                }
+                questionDiv.innerHTML += `</div>`;
+                document.getElementById("questions-container").appendChild(questionDiv);
+            }
+        }
+
+        async function finishTest() {
+
+        }
+
+    </script>
+
+</body>
+
+</html>

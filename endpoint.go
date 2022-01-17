@@ -5,12 +5,23 @@ type Endpoint string
 const (
 	root Endpoint = "/"
 	//teachers area
-	teacherLogin    Endpoint = "/teacher/login"
-	teacherRegister Endpoint = "/teacher/register"
+	TeacherPageEndpoint Endpoint = "/teacher"
+	TeacherLogin        Endpoint = "/teacher/login"
+	TeacherRegister     Endpoint = "/teacher/register"
 
 	//students area
-	requestAcceptance Endpoint = "/student/exam"
+	// RequestAcceptance Endpoint = "/student/exam"
+	SubmitExam        Endpoint = "/student/submit"
+	AccessExam        Endpoint = "/student/access"
+	RequestAccessExam Endpoint = "/student/request"
 
 	//exam area
-	examList Endpoint = "/exam/list"
+	GetExamResults Endpoint = "/exam/results/{id}"
+	ExamPage       Endpoint = "/exam"
+	AddExam        Endpoint = "/exam/add"
+	ListExams      Endpoint = "/exam/list"
 )
+
+func (e Endpoint) String() string {
+	return string(e)
+}
