@@ -541,5 +541,7 @@ func main() {
 	r.HandleFunc(RequestAccessExam.String(), RequestAccessExamHandler).Methods("POST")
 	r.Handle(AccessExam.String(), JWTAuthMiddleware(http.HandlerFunc(AccessExamHandler))).Methods("GET")
 	r.Handle(SubmitExam.String(), JWTAuthMiddleware(http.HandlerFunc(SubmitExamHandler))).Methods("POST")
-	http.ListenAndServe(":8080", r)
+
+	log.Println("starting webserber on port 8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

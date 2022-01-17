@@ -175,40 +175,60 @@
                     }
                 ]`);
 
-            console.log(questions);
-
             for (var i = 0; i < questions.length; i++) {
                 var question = questions[i];
                 console.log(question)
                 var questionDiv = document.createElement("div");
                 questionDiv.className = "card";
-                questionDiv.innerHTML = `
-                <div class="card-header">
-                    <h5 class="card-title">${question.question}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" id="q${i}1" value="${question.correct_answer}">
-                        <label class="form-check-label" for="q${i}1">
-                            ${question.correct_answer}
-                        </label>
-                    </div>`
+                let content = `
+                        <div class="card-header">
+                            <h5 class="card-title">${question.question}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question${i}" id="q${i}0" value="${question.correct_answer}">
+                                    <label class="form-check-label" for="q${i}0">
+                                        ${question.correct_answer}
+                                    </label>
+                            </div>`
+                // questionDiv.innerHTML.substring(0, questionDiv.innerHTML.length - 6);
                 for (var j = 0; j < question.incorrect_answers.length; j++) {
-                    questionDiv.innerHTML += `
+                    console.log(question.incorrect_answers[j])
+                    content += `
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="q${i}${j + 1}" value="${question.incorrect_answers[i]}">
-                        <label class="form-check-label" for="q${i}${j + 1}">
-                            ${question.incorrect_answers[i]}
-                        </label>
+                        <input class="form-check-input" type="radio" name="question${i}" id="q${i}${j + 1}" value="${question.incorrect_answers[j]}">
+                            <label class="form-check-label" for="q${i}${j + 1}">
+                                ${question.incorrect_answers[j]}
+                            </label>
                     </div>`;
                 }
-                questionDiv.innerHTML += `</div>`;
+                content += `</div>`;
+                questionDiv.innerHTML = content;
                 document.getElementById("questions-container").appendChild(questionDiv);
             }
         }
 
-        async function finishTest() {
+        function generateContent() {
+            var content = "";
+            //read which questions are checked 
+            var checked = document.querySelectorAll('input[type=radio]:checked');
+            for (var i = 0; i < checked.length; i++) {
+                content += checked[i].value + " ";
+            }
+            return content;
+        }
 
+        async function finishTest() {
+            const r = await fetch("/student/submit", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "content": content,
+                    "trie": 1
+                })
+            });
         }
 
     </script>
