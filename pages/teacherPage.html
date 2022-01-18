@@ -98,11 +98,13 @@
             }
             else {
                 subjects = resp.subjects;
-                for (var i = 0; i < subjects.length; i++) {
-                    var option = document.createElement("option");
-                    option.text = subjects[i].name;
-                    option.value = subjects[i].id;
-                    document.getElementById("subject").add(option);
+                if (subject !== null) {
+                    for (var i = 0; i < subjects.length; i++) {
+                        var option = document.createElement("option");
+                        option.text = subjects[i].name;
+                        option.value = subjects[i].id;
+                        document.getElementById("subject").add(option);
+                    }
                 }
             }
 
@@ -114,13 +116,12 @@
             }
             else {
                 subjects = resp.subjects;
-                if (subject !== null) {
-                    for (var i = 0; i < subjects.length; i++) {
-                        var option = document.createElement("option");
-                        option.text = subjects[i].name;
-                        option.value = subjects[i].id;
-                        document.getElementById("subjectToTeach").add(option);
-                    }
+
+                for (var i = 0; i < subjects.length; i++) {
+                    var option = document.createElement("option");
+                    option.text = subjects[i].name;
+                    option.value = subjects[i].id;
+                    document.getElementById("subjectToTeach").add(option);
                 }
             }
 
