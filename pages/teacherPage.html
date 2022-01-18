@@ -98,7 +98,7 @@
             }
             else {
                 subjects = resp.subjects;
-                if (subject !== null) {
+                if (subject != "null") {
                     for (var i = 0; i < subjects.length; i++) {
                         var option = document.createElement("option");
                         option.text = subjects[i].name;
@@ -116,7 +116,6 @@
             }
             else {
                 subjects = resp.subjects;
-
                 for (var i = 0; i < subjects.length; i++) {
                     var option = document.createElement("option");
                     option.text = subjects[i].name;
