@@ -54,7 +54,7 @@
 
     <script>
         async function init() {
-            var teacherID = window.location.href.replace(/^[a-z]{4,5}\:\/{2}[a-z]{1,}\:[0-9]{1,4}.(.*)/, '$1');
+            var teacherID = window.location.href.replace(window.location.host, "");
             teacherID = teacherID.replace("student/exam/", "");
             teacherID = teacherID.replace("/exams", "");
             console.log(teacherID)
