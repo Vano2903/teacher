@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Teacher page</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body onload="init()">
+    <center>
+        <h1 id="teacherInfo">benvenuto {{.Name}} {{.LastName}} {{.RegistrationNumber}}</h1>
+        <hr class="col-6">
+        <br>
+
+        <h3>Aggiungi un esame</h3>
+        <br>
+        <form class="col-6">
+            <div class="form-group">
+                <label for="name">Nome Esame</label>
+                <input type="text" class="form-control" id="name" placeholder="Nome Esame">
+            </div>
+            <div class="form-group">
+                <label for="subject">Materia</label>
+                <select class="form-control" id="subject">
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="difficulty">Difficoltá</label>
+                <select class="form-control" id="difficulty">
+                    <option>hard</option>
+                    <option>medium</option>
+                    <option>easy</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="numQuestions">Numero Di Domande</label>
+                <input type="number" class="form-control" min=1 max=50 id="numQuestions"></input>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="addExam()">Aggiungi</button>
+        </form>
+
+        <br>
+        <hr class="col-6">
+        <br>
+        <div class="col-6">
+            <h3>Aggiungi una materia</h3>
+            <select class="form-control" id="subjectToTeach">
+            </select>
+            <br>
+            <button type="button" class="btn btn-primary" onclick="addSubject()">Aggiungi Materia</button>
+        </div>
+        <br>
+        <hr class="col-6">
+        <br>
+        <div class="col-6">
+            <h3>Risultati esame</h3>
+            <h4>Scegli l'esame</h4>
+            <select class="form-control" id="exams">
+            </select>
+            <br>
+            <button type="button" class="btn btn-primary" onclick="getExamInfo()">Scegli esame</button>
+        </div>
+
+        <div id="examInfo" style="display: none;" class="col-6">
+        </div>
+        <br>
+        <br>
+        <br>
+
+    </center>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+    <script>
+        let id = document.getElementById("teacherInfo").innerHTML.split(" ")[document.getElementById("teacherInfo").innerHTML.split(" ").length - 1];
+
+        async function init() {
+            let response = await fetch('/teacher/subjects');
+            let resp = await response.json();
+            console.log(resp);
+            if (resp.error) {
+                alert(resp.msg);
+            }
+            else {
+                subjects = resp.subjects;
+                for (var i = 0; i < subjects.length; i++) {
+                    var option = document.createElement("option");
+                    option.text = subjects[i].name;
+                    option.value = subjects[i].id;
+                    document.getElementById("subject").add(option);
+                }
+            }
+
+            response = await fetch('/subjects');
+            resp = await response.json();
+            console.log("seconda:", resp);
+            if (resp.error) {
+                alert(resp.msg);
+            }
+            else {
+                subjects = resp.subjects;
+                for (var i = 0; i < subjects.length; i++) {
+                    var option = document.createElement("option");
+                    option.text = subjects[i].name;
+                    option.value = subjects[i].id;
+                    document.getElementById("subjectToTeach").add(option);
+                }
+            }
+
+
+            response = await fetch('/exam/list/' + id);
+            resp = await response.json();
+            console.log(resp);
+            if (resp.error) {
+                alert(resp.msg);
+            }
+            else {
+                exams = resp.exams;
+                for (var i = 0; i < exams.length; i++) {
+                    var option = document.createElement("option");
+                    option.text = exams[i].name;
+                    option.value = exams[i].id;
+                    document.getElementById("exams").add(option);
+                }
+            }
+        }
+
+        async function addSubject() {
+            let subjectId = parseInt(document.getElementById("subjectToTeach").value);
+            let response = await fetch('/teacher/subjects/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    class_id: subjectId
+                })
+            });
+            let resp = await response.json();
+            console.log(resp);
+            if (resp.error) {
+                alert(resp.msg);
+            }
+            else {
+                alert("Materia aggiunta con successo");
+            }
+        }
+
+        async function addExam() {
+            const name = document.getElementById("name").value;
+            const subject = parseInt(document.getElementById("subject").value);
+            const difficulty = document.getElementById("difficulty").value;
+            const numQuestions = parseInt(document.getElementById("numQuestions").value);
+            const response = await fetch('/exam/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    class_id: subject,
+                    difficulty: difficulty,
+                    num_of_question: numQuestions
+                })
+            });
+            const resp = await response.json();
+            console.log(resp);
+            if (resp.error) {
+                alert(resp.msg);
+            }
+            else {
+                alert("Esame aggiunto con successo");
+            }
+        }
+
+        async function getExamInfo() {
+            document.getElementById("examInfo").style.display = "block";
+
+            const examId = document.getElementById("exams").value;
+            const response = await fetch('/exam/results/' + examId);
+            const resp = await response.json();
+            console.log(resp);
+            if (resp.error) {
+                alert(resp.msg);
+            }
+            else {
+                resp.results.forEach(result => {
+                    console.log(result)
+                    //create a card with student name and last name and then the content
+                    var card = document.createElement("div");
+                    card.style.margin = "10px";
+                    card.className = "card";
+                    var cardBody = document.createElement("div");
+                    cardBody.className = "card-body";
+                    var cardTitle = document.createElement("h5");
+                    cardTitle.innerText = result.student_name + " " + result.student_lastname;
+                    cardBody.innerText = result.content;
+                    card.appendChild(cardTitle);
+                    card.appendChild(cardBody);
+                    document.getElementById("examInfo").appendChild(card);
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>

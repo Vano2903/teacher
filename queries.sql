@@ -18,6 +18,8 @@ SELECT r.nome_studente, r.cognome_studente, r.contenuto, r.tentativi, e.difficol
 SELECT e.difficolta, e.numero_domande, e.nome, c.api_value FROM esami e join corsi c on ID_corso = c.ID;
 -- difficolta,numero_domande,nome,api_value
 
-
+--* get the teachers that have at least one exam
+SELECT i.nome, i.cognome, i.matricola FROM esami e join insegnante i on iD_insegnante = i.ID  GROUP BY iD_insegnante;
+-- nome,cognome,matricola
 
 

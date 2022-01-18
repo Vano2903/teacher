@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -20,6 +21,7 @@ type Post struct {
 	RegistrationNumber int    `json:"registration_number, omitempty"`
 	Password           string `json:"password, omitempty"`
 	ExamID             int    `json:"exam_id, omitempty"`
+	ClassID            int    `json:"class_id, omitempty"`
 }
 
 //middlewars
@@ -48,6 +50,30 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 }
 
 //teacher's handlers
+func RegisterTeacherPageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	page, err := ioutil.ReadFile("pages/teacherRegister.html")
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusServiceUnavailable, "Internal server error: "+err.Error())
+		return
+	}
+	w.Write(page)
+}
+
+func LoginTeacherPageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	page, err := ioutil.ReadFile("pages/teacherLogin.html")
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusServiceUnavailable, "Internal server error: "+err.Error())
+		return
+	}
+	w.Write(page)
+}
+
 func TeacherPage(w http.ResponseWriter, r *http.Request) {
 	var jwt string
 
@@ -67,14 +93,16 @@ func TeacherPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Name     string
-		LastName string
+		Name               string
+		LastName           string
+		RegistrationNumber int
 	}{
-		Name:     teacherJWT.Name,
-		LastName: teacherJWT.Lastname,
+		Name:               teacherJWT.Name,
+		LastName:           teacherJWT.Lastname,
+		RegistrationNumber: teacherJWT.RegistrationNumber,
 	}
 
-	tmpl, err := template.ParseFiles("pages/teacher.html")
+	tmpl, err := template.ParseFiles("pages/teacherPage.html")
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -93,7 +121,8 @@ func LoginTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&post)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusBadRequest, "Invalid json")
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusBadRequest, "Invalid json, "+err.Error())
+		return
 	}
 	//hash the password with sha256
 	hashedPassword := sha256.Sum256([]byte(post.Password))
@@ -191,7 +220,186 @@ func RegisterTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("successful registered by %s %s %d \n", post.Name, post.LastName, post.RegistrationNumber) //logging
 }
 
+func GetSubjectsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	//get the jwt token from the cookie
+	cookie, err := r.Cookie("JWT")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "no jwt cookie")
+		return
+	}
+
+	//check if the token is valid
+	token, err := ParseToken(cookie.Value)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "error with jwt token: "+err.Error())
+		return
+	}
+
+	teacher, err := QueryTeacherByRegistrationNumber(token.RegistrationNumber)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())
+		return
+	}
+
+	subjects, err := teacher.GetSubjects()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())
+		return
+	}
+
+	subjectsByte, err := json.Marshal(subjects)
+	fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": false, "subjects":%s}`, http.StatusOK, "Successfully got the subjects", string(subjectsByte))
+}
+
+func GetAllSubjectsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	subjects, err := GetAllSubjects()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())
+		return
+	}
+
+	subjectsByte, err := json.Marshal(subjects)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())
+		return
+	}
+	fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": false, "subjects":%s}`, http.StatusOK, "Successfully got the subjects", string(subjectsByte))
+}
+
+func AddSubjectHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	//get the jwt token from the cookie
+	cookie, err := r.Cookie("JWT")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "no jwt cookie")
+		return
+	}
+
+	//check if the token is valid
+	token, err := ParseToken(cookie.Value)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "error with jwt token: "+err.Error())
+		return
+	}
+
+	teacher, err := QueryTeacherByRegistrationNumber(token.RegistrationNumber)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())
+		return
+	}
+
+	var post Post
+	err = json.NewDecoder(r.Body).Decode(&post)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusBadRequest, "Invalid json")
+		return
+	}
+
+	//insert the subject struct into the subject table
+	err = teacher.AddSubject(post.ClassID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "Internal server error: "+err.Error())
+		return
+	}
+	//return the subject struct as jso
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": false}`, http.StatusCreated, "Subject successfully registered, you can do the login now")
+	log.Printf("successful registered by %s %s %d \n", post.Name, post.LastName, post.RegistrationNumber) //logging
+}
+
 //student's handlers
+func RequestTeacherExamPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	page, err := ioutil.ReadFile("pages/requestTeacher.html")
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusServiceUnavailable, "Internal server error: "+err.Error())
+		return
+	}
+
+	w.Write(page)
+}
+
+func RequestExamPageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	page, err := ioutil.ReadFile("pages/requestExam.html")
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusServiceUnavailable, "Internal server error: "+err.Error())
+		return
+	}
+	w.Write(page)
+}
+
+func GetExamPageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	//get the jwt token from the cookie
+	cookie, err := r.Cookie("JWT")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "no jwt cookie")
+		return
+	}
+
+	//check if the token is valid
+	token, err := ParseToken(cookie.Value)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "error with jwt token: "+err.Error())
+		return
+	}
+
+	exam, err := GetExamFromID(token.ExamID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())
+		return
+	}
+
+	teacher, err := QueryTeacherByID(exam.TeacherID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())
+		return
+	}
+
+	data := struct {
+		ExamName string
+		Name     string
+		LastName string
+	}{
+		ExamName: exam.Name,
+		LastName: teacher.LastName,
+		Name:     teacher.Name,
+	}
+
+	tmpl, err := template.ParseFiles("pages/exam.html")
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusServiceUnavailable, "Internal server error: "+err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	tmpl.Execute(w, data)
+}
+
 func RequestAccessExamHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -221,7 +429,7 @@ func RequestAccessExamHandler(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 	w.Header().Add("Authorization", "Bearer "+token)
-	fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": false}`, http.StatusOK, "Successfully requested access to exam, you have 1 hour to complete the test from now, you can access only one time to the resource but you can do as many tries as you wish (by staying in the time limit)")
+	fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": false}`, http.StatusOK, "Successfully requested access to exam, you have 1 hour to complete the test from now, you can access only one time to the resource but you can do as many tries as you wish (by staying in the time limit), to access the exam go to /student/exam")
 }
 
 func AccessExamHandler(w http.ResponseWriter, r *http.Request) {
@@ -485,29 +693,20 @@ func GetResultsOfExamHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListExamsHandler(w http.ResponseWriter, r *http.Request) {
-	var jwt string
+	w.Header().Set("Content-Type", "application/json")
 
-	//read value of cookie called jwt
-	for _, cookie := range r.Cookies() {
-		if cookie.Name == "JWT" {
-			jwt = cookie.Value
-			break
-		}
-	}
-
-	//parse the jwt
-	teacherJWT, err := ParseToken(jwt)
+	id, err := strconv.Atoi(mux.Vars(r)["teacher_id"])
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "Invalid authorization token: "+err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusBadRequest, "Invalid teacher ID, must be a positive integer")
 		return
 	}
 
 	//get the teacher using the value in the jwt
-	teacher, err := QueryTeacherByRegistrationNumber(teacherJWT.RegistrationNumber)
+	teacher, err := QueryTeacherByRegistrationNumber(id)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "Invalid authorization token: "+err.Error())
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusUnauthorized, "no teacher with such id")
 		return
 	}
 
@@ -525,23 +724,69 @@ func ListExamsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": false, "exams":%s}`, http.StatusOK, "Exams successfully retrieved", examsJSON)
 }
 
+func GetAllTeachersHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	//get all teachers
+	teachers, err := QueryAllTeachersWithAtLeastOneExam()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "Internal server error: "+err.Error())
+		return
+	}
+	//return the teacher struct as json
+	teachersByte, err := json.Marshal(teachers)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "Internal server error: "+err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": false, "teachers":%s}`, http.StatusOK, "Successfully retrieved all teachers", string(teachersByte))
+}
+
 func main() {
 	r := mux.NewRouter()
-	//teacher handlers
+
+	//*generics handlers
+	r.HandleFunc("/images/jwt", func(w http.ResponseWriter, r *http.Request) {
+		fileBytes, err := ioutil.ReadFile("images/jwt.png")
+		if err != nil {
+			panic(err)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Write(fileBytes)
+	}).Methods("GET")
+	r.HandleFunc(AllSubjects.String(), GetAllSubjectsHandler).Methods("GET")
+
+	//*teacher handlers
+	//page handlers
+	r.HandleFunc(TeacherLogin.String(), LoginTeacherPageHandler).Methods("GET")
+	r.HandleFunc(TeacherRegister.String(), RegisterTeacherPageHandler).Methods("GET")
 	r.Handle(TeacherPageEndpoint.String(), JWTAuthMiddleware(http.HandlerFunc(TeacherPage))).Methods("GET")
+	//api handlers
 	r.HandleFunc(TeacherLogin.String(), LoginTeacherHandler).Methods("POST")
 	r.HandleFunc(TeacherRegister.String(), RegisterTeacherHandler).Methods("POST")
+	r.Handle(GetSubjects.String(), JWTAuthMiddleware(http.HandlerFunc(GetSubjectsHandler))).Methods("GET")
+	r.Handle(AddSubject.String(), JWTAuthMiddleware(http.HandlerFunc(AddSubjectHandler))).Methods("POST")
 
-	//exam handlers
-	r.Handle(AddExam.String(), JWTAuthMiddleware(http.HandlerFunc(AddExamHandler))).Methods("POST")
-	r.Handle(GetExamResults.String(), JWTAuthMiddleware(http.HandlerFunc(GetResultsOfExamHandler))).Methods("GET")
-	r.Handle(ListExams.String(), JWTAuthMiddleware(http.HandlerFunc(ListExamsHandler))).Methods("GET")
-
-	//student handlers
+	//*student handlers
+	//page handlers
+	r.HandleFunc(RequestTeacherExam.String(), RequestTeacherExamPage).Methods("GET")
+	r.HandleFunc(RequestExam.String(), RequestExamPageHandler).Methods("GET")
+	r.Handle(GetExamPage.String(), JWTAuthMiddleware(http.HandlerFunc(GetExamPageHandler))).Methods("GET")
+	//api handlers
 	r.HandleFunc(RequestAccessExam.String(), RequestAccessExamHandler).Methods("POST")
 	r.Handle(AccessExam.String(), JWTAuthMiddleware(http.HandlerFunc(AccessExamHandler))).Methods("GET")
 	r.Handle(SubmitExam.String(), JWTAuthMiddleware(http.HandlerFunc(SubmitExamHandler))).Methods("POST")
 
-	log.Println("starting webserber on port 8080")
+	//*exam handlers
+	//api handlers
+	r.HandleFunc(ListExams.String(), ListExamsHandler).Methods("GET")
+	r.HandleFunc(GetAllTeachers.String(), GetAllTeachersHandler).Methods("GET")
+	r.Handle(AddExam.String(), JWTAuthMiddleware(http.HandlerFunc(AddExamHandler))).Methods("POST")
+	r.Handle(GetExamResults.String(), JWTAuthMiddleware(http.HandlerFunc(GetResultsOfExamHandler))).Methods("GET")
+
+	log.Println("starting webserver on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

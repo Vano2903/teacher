@@ -27,7 +27,7 @@ func (e ExamResult) AddToDB() error {
 }
 
 type ExamToCompile struct {
-	ID            int        `json:"-"`
+	ID            int        `json:"id"`
 	TeacherID     int        `json:"id_teacher"`
 	Name          string     `json:"name"`
 	NumOfQuestion int        `json:"num_of_question"` //[1, 50]
@@ -37,6 +37,8 @@ type ExamToCompile struct {
 	Questions     []Question `json:"questions, omitempty"`
 }
 
+var token string
+
 func (e *ExamToCompile) GenerateExamToCompile() error {
 	db, err := ConnectToDb()
 	if err != nil {
@@ -44,12 +46,11 @@ func (e *ExamToCompile) GenerateExamToCompile() error {
 	}
 	var api_value string
 	err = db.QueryRow("SELECT api_value FROM corsi WHERE ID=?", e.ClassID).Scan(&api_value)
-
 	if err != nil {
 		return err
 	}
 
-	resp, err := http.Get(fmt.Sprintf("https://opentdb.com/api.php?amount=%d&category=%s&difficulty=%s&type=multiple", e.NumOfQuestion, api_value, e.Difficulty))
+	resp, err := http.Get(fmt.Sprintf("https://opentdb.com/api.php?amount=%d&category=%s&difficulty=%s&type=multiple&token=%s", e.NumOfQuestion, api_value, e.Difficulty, token))
 	if err != nil {
 		return err
 	}
@@ -60,12 +61,36 @@ func (e *ExamToCompile) GenerateExamToCompile() error {
 		return err
 	}
 	type Response struct {
-		Result []Question `json:"results"`
+		ResponseCode    int        `json:"response_code"`
+		Result          []Question `json:"results"`
+		Token           string     `json:"token"`
+		ResponseMessage string     `json:"response_message"`
 	}
 	var res Response
 	err = json.Unmarshal(body, &res)
 	if err != nil {
 		return err
+	}
+
+	if res.ResponseCode == 1 {
+		return fmt.Errorf("Error: %s", res.ResponseMessage)
+	}
+
+	if res.ResponseCode != 0 {
+		resp, err := http.Get("https://opentdb.com/api_token.php?command=request")
+		if err != nil {
+			return err
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(body, &res)
+		if err != nil {
+			return err
+		}
+		token = res.Token
+		return e.GenerateExamToCompile()
 	}
 
 	e.Questions = res.Result

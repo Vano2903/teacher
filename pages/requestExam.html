@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>get exam, idk man</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body onload="init()">
+    <center>
+        <h1>BENVENUTOOO >:( (mi manca ancora il frontend xD)</h1>
+        <br>
+        <h3>COSA DIAMINE CI FAI QUI, VAI A STUDIARE CHE NON SEI PRONTO PER FARE L'ESAME >:(((</h3>
+        <hr>
+
+        <div class="col-6">
+            <form>
+                <div class="form-group">
+                    <label for="studentName">Nome</label>
+                    <input type="text" class="form-control" id="studentName" aria-describedby="emailHelp"
+                        placeholder="Jhon">
+                </div>
+                <div class="form-group">
+                    <label for="studentLastName">Cognome</label>
+                    <input type="text" class="form-control" id="studentLastName" placeholder="Doe">
+                </div>
+            </form>
+        </div>
+        <hr>
+        <h2>ESAMI DEL PROFESSORE</h2>
+        <div id="card-container">
+
+        </div>
+    </center>
+
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+    <script>
+        async function init() {
+            var teacherID = window.location.href.replace(/^[a-z]{4,5}\:\/{2}[a-z]{1,}\:[0-9]{1,4}.(.*)/, '$1');
+            teacherID = teacherID.replace("student/exam/", "");
+            teacherID = teacherID.replace("/exams", "");
+            console.log(teacherID)
+
+            const r = await fetch('/exam/list/' + teacherID);
+            const exams = await r.json();
+            const cardContainer = document.getElementById('card-container');
+            console.log(exams)
+            exams.exams.forEach(exam => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.width = '18rem';
+                card.style.padding = '10px';
+                card.style.margin = '10px';
+                cardContainer.appendChild(card);
+                const cardBody = document.createElement('div');
+                cardBody.className = 'card-body';
+                cardBody.innerText = exam.name + " - materia: " + exam.subject;
+                card.appendChild(cardBody);
+                card.setAttribute('onclick', 'requestExam(' + exam.id + ');');
+            });
+        }
+
+        async function requestExam(examID) {
+            var name = document.getElementById('studentName').value;
+            if (name == "") {
+                alert("Inserisci il nome");
+                return;
+            }
+            var lastname = document.getElementById('studentLastName').value;
+            if (lastname == "") {
+                alert("Inserisci il cognome");
+                return;
+            }
+
+            const r = await fetch('/student/request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    lastname: lastname,
+                    exam_id: examID
+                })
+            });
+
+            const response = await r.json();
+            console.log(response);
+            if (response.error) {
+                alert(response.error);
+            } else {
+                location.replace("/student/exam");
+            }
+        }
+
+    </script>
+</body>
+
+</html>

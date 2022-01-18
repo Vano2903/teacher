@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -43,6 +42,4 @@ func init() {
 		conf.Password = password
 		conf.Secret = secret
 	}
-
-	fmt.Println(QueryTeacherByRegistrationNumber(2))
 }
