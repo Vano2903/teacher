@@ -114,11 +114,13 @@
             }
             else {
                 subjects = resp.subjects;
-                for (var i = 0; i < subjects.length; i++) {
-                    var option = document.createElement("option");
-                    option.text = subjects[i].name;
-                    option.value = subjects[i].id;
-                    document.getElementById("subjectToTeach").add(option);
+                if (subject !== null) {
+                    for (var i = 0; i < subjects.length; i++) {
+                        var option = document.createElement("option");
+                        option.text = subjects[i].name;
+                        option.value = subjects[i].id;
+                        document.getElementById("subjectToTeach").add(option);
+                    }
                 }
             }
 
@@ -131,11 +133,13 @@
             }
             else {
                 exams = resp.exams;
-                for (var i = 0; i < exams.length; i++) {
-                    var option = document.createElement("option");
-                    option.text = exams[i].name;
-                    option.value = exams[i].id;
-                    document.getElementById("exams").add(option);
+                if (exams !== null) {
+                    for (var i = 0; i < exams.length; i++) {
+                        var option = document.createElement("option");
+                        option.text = exams[i].name;
+                        option.value = exams[i].id;
+                        document.getElementById("exams").add(option);
+                    }
                 }
             }
         }
