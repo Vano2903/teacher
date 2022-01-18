@@ -98,7 +98,7 @@
             }
             else {
                 let subjects = resp.subjects;
-                if (subject !== null) {
+                if (resp.subjects !== null) {
                     for (var i = 0; i < subjects.length; i++) {
                         var option = document.createElement("option");
                         option.text = subjects[i].name;
@@ -133,7 +133,7 @@
             }
             else {
                 let exams = resp.exams;
-                if (exams !== null) {
+                if (resp.exams !== null) {
                     for (var i = 0; i < exams.length; i++) {
                         var option = document.createElement("option");
                         option.text = exams[i].name;
