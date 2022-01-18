@@ -97,8 +97,8 @@
                 alert(resp.msg);
             }
             else {
-                subjects = resp.subjects;
-                if (subject != "null") {
+                let subjects = resp.subjects;
+                if (subject !== null) {
                     for (var i = 0; i < subjects.length; i++) {
                         var option = document.createElement("option");
                         option.text = subjects[i].name;
@@ -115,7 +115,7 @@
                 alert(resp.msg);
             }
             else {
-                subjects = resp.subjects;
+                let subjects = resp.subjects;
                 for (var i = 0; i < subjects.length; i++) {
                     var option = document.createElement("option");
                     option.text = subjects[i].name;
@@ -132,7 +132,7 @@
                 alert(resp.msg);
             }
             else {
-                exams = resp.exams;
+                let exams = resp.exams;
                 if (exams !== null) {
                     for (var i = 0; i < exams.length; i++) {
                         var option = document.createElement("option");
