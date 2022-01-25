@@ -22,6 +22,7 @@ func (e ExamResult) AddToDB() error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	_, err = db.Exec("INSERT INTO risultati_esami (nome_studente, cognome_studente, tentativi, ID_esame, contenuto) VALUES (?, ?, ?, ?, ?)", e.StudentName, e.StudentLastname, e.Tries, e.ExamID, e.Content)
 	return err
 }
@@ -44,6 +45,7 @@ func (e *ExamToCompile) GenerateExamToCompile() error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	var api_value string
 	err = db.QueryRow("SELECT api_value FROM corsi WHERE ID=?", e.ClassID).Scan(&api_value)
 	if err != nil {
@@ -102,6 +104,7 @@ func (e *ExamToCompile) AddToDB() error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	result, err := db.Exec("INSERT INTO esami (nome, difficolta, ID_insegnante, numero_domande, ID_corso) VALUES (?, ?, ?, ?, ?)", e.Name, e.Difficulty, e.TeacherID, e.NumOfQuestion, e.ClassID)
 	if err != nil {
 		return err
@@ -116,6 +119,7 @@ func (e ExamToCompile) GetExamResults(teacherID int) ([]ExamResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	rows, err := db.Query("SELECT r.ID, r.nome_studente, r.cognome_studente, r.tentativi, r.ID_esame, r.contenuto FROM risultati_esami r join esami e on ID_esame = e.ID join insegnante i on e.ID_insegnante = i.ID WHERE e.ID_insegnante = ? AND e.ID = ?;", teacherID, e.ID)
 	if err != nil {
 		return nil, err
@@ -144,6 +148,7 @@ func GetExamFromID(id int) (ExamToCompile, error) {
 	if err != nil {
 		return ExamToCompile{}, err
 	}
+	defer db.Close()
 	err = db.QueryRow("SELECT * FROM esami WHERE id = ?", id).Scan(&exam.ID, &exam.Difficulty, &exam.ClassID, &exam.NumOfQuestion, &exam.Name, &exam.TeacherID)
 	return exam, err
 }

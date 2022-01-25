@@ -24,6 +24,7 @@ func QueryTeacherByRegistrationNumber(registrationNumber int) (Teacher, error) {
 	if err != nil {
 		return Teacher{}, err
 	}
+	defer db.Close()
 	var teacher Teacher
 	//select every filed from teacher table where matricola = registrationNumber
 	//then exec a scan over the Row returned by the query and assing the values to the teacher struct (using pointers)
@@ -37,6 +38,8 @@ func QueryTeacherByID(ID int) (Teacher, error) {
 	if err != nil {
 		return Teacher{}, err
 	}
+	defer db.Close()
+
 	var teacher Teacher
 	//select every filed from teacher table where matricola = registrationNumber
 	//then exec a scan over the Row returned by the query and assing the values to the teacher struct (using pointers)
@@ -50,6 +53,7 @@ func QueryAllTeachersWithAtLeastOneExam() ([]Teacher, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	//select every filed from esami table where ID_insegnante = t.ID
 	//then exec a scan over the Row returned by the query and assing the values to the exam struct
 	rows, err := db.Query("SELECT i.nome, i.cognome, i.matricola FROM esami e join insegnante i on iD_insegnante = i.ID  GROUP BY iD_insegnante")
@@ -75,6 +79,7 @@ func (t Teacher) AddTeacher() error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	//insert the teacher struct into the teacher table
 	_, err = db.Exec("INSERT INTO insegnante (nome, cognome, matricola, password) VALUES (?, ?, ?, ?)", t.Name, t.LastName, t.RegistrationNumber, hashedPws)
 	return err
@@ -86,6 +91,7 @@ func (t Teacher) GetExams() ([]ExamToCompile, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	//select every filed from esami table where ID_insegnante = t.ID
 	//then exec a scan over the Row returned by the query and assing the values to the exam struct
 	rows, err := db.Query("SELECT e.ID, e.ID_insegnante, e.difficolta, e.numero_domande, e.nome, e.ID_corso, c.materia FROM esami e join corsi c on ID_corso = c.ID WHERE e.id_insegnante = ?", t.ID)
@@ -110,6 +116,7 @@ func (t Teacher) GetSubjects() ([]Subject, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 
 	rows, err := db.Query("SELECT c.ID, c.materia FROM insegna i join corsi c on id_corso = c.ID WHERE i.id_insegnante = ?", t.ID)
 	if err != nil {
@@ -133,6 +140,7 @@ func (t Teacher) AddSubject(subject int) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	//insert the teacher struct into the teacher table
 	_, err = db.Exec("INSERT INTO insegna (id_insegnante, id_corso) VALUES (?, ?)", t.ID, subject)
 	return err
@@ -144,6 +152,7 @@ func GetAllSubjects() ([]Subject, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	rows, err := db.Query("SELECT ID, materia FROM corsi")
 	if err != nil {
 		return nil, err

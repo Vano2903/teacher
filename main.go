@@ -293,7 +293,9 @@ func AddSubjectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	teacher, err := QueryTeacherByRegistrationNumber(token.RegistrationNumber)
+	fmt.Println(token)
+
+	teacher, err := QueryTeacherByRegistrationNumber(1) //token.RegistrationNumber
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, `{"code": %d, "msg":"%s", "error": true}`, http.StatusInternalServerError, "error with jwt token: "+err.Error())

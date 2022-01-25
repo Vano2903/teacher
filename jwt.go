@@ -25,7 +25,7 @@ func NewCustomClaims(name, lastname string, examID int, expiration int64) Custom
 		Accessed: false,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiration,
-			Issuer:    "vano-jwt-teachers",
+			Issuer:    "vano2903-teachers",
 		},
 	}
 	return token
